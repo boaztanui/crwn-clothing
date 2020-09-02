@@ -1,76 +1,84 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { connect } from 'react-redux';
 
 import FormInput from '../form-input/form-input.component';
 import CustomButton from '../custom-button/custom-button.component';
 
-import { auth, signInWithGoogle} from '../../firebase/firebase.utils';
+import {
+  googleSignInStart,
+  emailSignInStart
+} from '../../redux/user/user.actions';
 
-import './sign-in.styles.scss';
+import {
+  SignInContainer,
+  SignInTitle,
+  ButtonsBarContainer
+} from './sign-in.styles';
 
+const SignIn = ({emailSignInStart, googleSignInStart}) => {
+  const [userCredentials, setCredentials] = useState({
+    email: '', 
+    password: ''
+  });
 
+  const { email, password } = userCredentials;
+  
+ const  handleSubmit = async event => {
+    event.preventDefault();
 
-class SignIN extends React.Component{
-    constructor(props){
-        super(props);
+    emailSignInStart(email, password);
+  };
 
-        this.state= {
-            email: '',
-            password: ''
-        }
-    }
+  const handleChange = event => {
+    const { value, name } = event.target;
 
-    handleSubmit =  async event => {
-        event.preventDefault();
+    setCredentials({ ...userCredentials, [name]: value });
+  };
 
-        const {email, password} = this.state;
+    return (
+      <SignInContainer>
+        <SignInTitle>I already have an account</SignInTitle>
+        <span>Sign in with your email and password</span>
 
-        try{
-            await auth.signInWithEmailAndPassword(email, password);
-            this.setState({email:'', password:''});
-        }catch (error){
-            console.log(error);
-        }
-    };
+        <form onSubmit={handleSubmit}>
+          <FormInput
+            name='email'
+            type='email'
+            handleChange={handleChange}
+            value={email}
+            label='email'
+            required
+          />
+          <FormInput
+            name='password'
+            type='password'
+            value={password}
+            handleChange={handleChange}
+            label='password'
+            required
+          />
+          <ButtonsBarContainer>
+            <CustomButton type='submit'> Sign in </CustomButton>
+            <CustomButton
+              type='button'
+              onClick={googleSignInStart}
+              isGoogleSignIn
+            >
+              Sign in with Google
+            </CustomButton>
+          </ButtonsBarContainer>
+        </form>
+      </SignInContainer>
+    );
+  }
 
-    handleChange = event => {
-        const { value, name} = event.target;
+const mapDispatchToProps = dispatch => ({
+  googleSignInStart: () => dispatch(googleSignInStart()),
+  emailSignInStart: (email, password) =>
+    dispatch(emailSignInStart({ email, password }))
+});
 
-        this.setState({[name]: value});
-    };
-
-    render(){
-        return (
-            <div className='sign-in'>
-                <h2>I already have an account</h2>
-                <span>Sign in with your email and Password</span>
-
-                <form onSubmit={this.handleSubmit}>
-                    <FormInput 
-                    name="email" 
-                    type="email" 
-                    value={this.state.email} 
-                    handleChange={this.handleChange}
-                    label='email' 
-                    required
-                    />
-                    
-                    <FormInput 
-                    name="password" 
-                    type="password" 
-                    value={this.state.password} 
-                    handleChange={this.handleChange} 
-                    label='password'
-                    required
-                    />
-                    <div className='buttons'>
-                        <CustomButton type="submit">Sign in</CustomButton>
-                        <CustomButton type="button" onClick={signInWithGoogle} isGoogleSignIn>Sign in with Google</CustomButton>
-                    </div>
-                </form>
-            </div>
-        );
-    }
-}
-
-
-export default SignIN;
+export default connect(
+  null,
+  mapDispatchToProps
+)(SignIn);

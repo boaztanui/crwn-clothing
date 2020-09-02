@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Switch, Route, Redirect} from 'react-router-dom';
 import {connect} from 'react-redux';
 import {createStructuredSelector} from 'reselect';
@@ -13,41 +13,18 @@ import CheckoutPage from './pages/checkout/checkout.component';
 
 import Header from './components/header/header.component';
 
-import { auth, createUserProfileDocument} from './firebase/firebase.utils';
-
-import {setCurrentUser} from './redux/user/user.actions';
 import {selectCurrentUser} from './redux/user/user.selectors';
+import { checkUserSession } from './redux/user/user.actions';
 
 
 
 
-class App extends React.Component {
-    unSubscribeFromAuth = null;
 
-    componentDidMount(){
+const App ({ checkUserSession, currentUser }) => {
+    useEffect(() => {
+      checkUserSession()
+    }, [checkUserSession]);
 
-      const {setCurrentUser} = this.props;
-
-      this.unSubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
-        if (userAuth){
-          const userRef = await createUserProfileDocument(userAuth);
-
-          userRef.onSnapshot(snapShot => {
-              setCurrentUser({
-                id:snapShot.id,
-                ...snapShot.data()
-              });
-            });
-        }
-        setCurrentUser(userAuth);
-      });
-    }
-
-    componentWillUnmount(){
-      this.unSubscribeFromAuth();
-    }
-
-    render(){
     return (
     <div>
       <Header />
@@ -58,7 +35,7 @@ class App extends React.Component {
       
       <Route exact path='/signin' 
       render={() => 
-        this.props.currentUser? (
+        currentUser ? (
           <Redirect to='/'/>
           ) : (
             <SignInAndSignUpPage/>
@@ -69,17 +46,16 @@ class App extends React.Component {
     </div>
   );
   }
-}
 
 const mapStateToProps = createStructuredSelector({
   currentUser: selectCurrentUser
 });
 
-  const mapDispatchToProps = dispatch => ({
-    setCurrentUser: user => dispatch(setCurrentUser(user))
-  });
+const mapDispatchToProps = dispatch => ({
+  checkUserSession: () => dispatch(checkUserSession())
+});
 
 export default connect(
-  mapStateToProps, 
+  mapStateToProps,
   mapDispatchToProps
-  )(App);
+)(App);
